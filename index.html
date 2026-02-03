@@ -26,20 +26,22 @@
       font-size: 34px;
       font-weight: 700;
       letter-spacing: -0.5px;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      text-align: center; /* Titre centré également */
     }
 
+    /* Barre d'outils centrée */
     .toolbar {
       display: flex;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
       flex-wrap: wrap;
+      justify-content: center; /* Centrage horizontal */
       align-items: center;
     }
 
-    /* Barre de recherche moins longue */
     input[type="text"] {
-      max-width: 300px; /* Longueur limitée */
+      max-width: 300px;
       flex-grow: 1;
       min-width: 150px;
     }
@@ -52,11 +54,12 @@
       font-size: 14px;
       font-family: var(--apple-font);
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
     }
 
     input[type="text"]:focus, select:focus {
       border-color: var(--accent);
+      background-color: #fff;
     }
 
     .grid {
@@ -122,14 +125,16 @@
 
     @media (max-width: 600px) {
       header h1 { font-size: 28px; }
-      input[type="text"] { max-width: 100%; }
+      .toolbar { flex-direction: column; }
+      input[type="text"] { max-width: 100%; width: 100%; }
+      select { width: 100%; }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>Ma page d'accueil</h1>
+    <h1 id="pageTitle">Ma page d'accueil</h1>
   </header>
 
   <div class="toolbar">
@@ -144,6 +149,15 @@
   <script>
     let allRecords = [];
 
+    // Gestion du titre dynamique via paramètre URL
+    function updateTitleFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const customTitle = params.get('title');
+      if (customTitle) {
+        document.getElementById('pageTitle').textContent = customTitle;
+      }
+    }
+
     async function setupTable() {
       try {
         const tables = await grist.docApi.listTables();
@@ -157,7 +171,7 @@
             ]]
           ]);
         }
-      } catch (e) { console.log("Table setup skipped."); }
+      } catch (e) { console.log("Setup skipped"); }
     }
 
     function getBadgeStyle(type) {
@@ -179,6 +193,7 @@
     });
 
     setupTable();
+    updateTitleFromURL(); // Appel au chargement
 
     grist.onRecords(function(records) {
       allRecords = grist.mapColumnNames(records);
@@ -207,7 +222,6 @@
       grid.innerHTML = '';
 
       const filtered = allRecords.filter(r => {
-        // RECHERCHE ÉTENDUE : titre OU type
         const matchesSearch = (r.titre || "").toLowerCase().includes(searchTerm) || 
                              (r.type || "").toLowerCase().includes(searchTerm);
         const matchesType = typeFilter === 'all' || r.type === typeFilter;
