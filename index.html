@@ -34,6 +34,14 @@
       gap: 12px;
       margin-bottom: 20px;
       flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* Barre de recherche moins longue */
+    input[type="text"] {
+      max-width: 300px; /* Longueur limitée */
+      flex-grow: 1;
+      min-width: 150px;
     }
 
     input[type="text"], select {
@@ -44,9 +52,12 @@
       font-size: 14px;
       font-family: var(--apple-font);
       outline: none;
+      transition: border-color 0.2s;
     }
 
-    input[type="text"] { flex-grow: 1; min-width: 180px; }
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+    }
 
     .grid {
       display: grid;
@@ -111,7 +122,7 @@
 
     @media (max-width: 600px) {
       header h1 { font-size: 28px; }
-      .toolbar { flex-direction: column; }
+      input[type="text"] { max-width: 100%; }
     }
   </style>
 </head>
@@ -122,7 +133,7 @@
   </header>
 
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="Rechercher...">
+    <input type="text" id="searchInput" placeholder="Rechercher titre ou type...">
     <select id="typeFilter">
       <option value="all">Tous les types</option>
     </select>
@@ -133,7 +144,6 @@
   <script>
     let allRecords = [];
 
-    // Configuration automatique de la table si nécessaire
     async function setupTable() {
       try {
         const tables = await grist.docApi.listTables();
@@ -146,11 +156,8 @@
               {id: 'lien', type: 'Text'}
             ]]
           ]);
-          console.log("Table 'Menus' créée avec succès.");
         }
-      } catch (e) {
-        console.log("Note: La table existe déjà ou les permissions sont insuffisantes.");
-      }
+      } catch (e) { console.log("Table setup skipped."); }
     }
 
     function getBadgeStyle(type) {
@@ -167,11 +174,10 @@
     }
 
     grist.ready({
-      requiredAccess: 'full', // Changé en full pour permettre la création de table
+      requiredAccess: 'full',
       columns: ['titre', 'type', 'cover', 'lien']
     });
 
-    // On tente la configuration au démarrage
     setupTable();
 
     grist.onRecords(function(records) {
@@ -184,7 +190,6 @@
       const select = document.getElementById('typeFilter');
       const currentSelection = select.value;
       const types = [...new Set(records.map(r => r.type).filter(Boolean))];
-      
       select.innerHTML = '<option value="all">Tous les types</option>';
       types.sort().forEach(type => {
         const option = document.createElement('option');
@@ -199,11 +204,12 @@
       const grid = document.getElementById('cardGrid');
       const searchTerm = document.getElementById('searchInput').value.toLowerCase();
       const typeFilter = document.getElementById('typeFilter').value;
-      
       grid.innerHTML = '';
 
       const filtered = allRecords.filter(r => {
-        const matchesSearch = (r.titre || "").toLowerCase().includes(searchTerm);
+        // RECHERCHE ÉTENDUE : titre OU type
+        const matchesSearch = (r.titre || "").toLowerCase().includes(searchTerm) || 
+                             (r.type || "").toLowerCase().includes(searchTerm);
         const matchesType = typeFilter === 'all' || r.type === typeFilter;
         return matchesSearch && matchesType;
       });
@@ -214,7 +220,6 @@
         card.href = record.lien || '#';
         card.target = "_blank";
         card.rel = "noopener noreferrer";
-
         card.innerHTML = `
           <img class="card-image" src="${record.cover || 'https://via.placeholder.com/400x200?text=Image'}" alt="">
           <div class="card-content">
