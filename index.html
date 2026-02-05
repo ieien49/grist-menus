@@ -27,25 +27,19 @@
       font-weight: 700;
       letter-spacing: -0.5px;
       margin-bottom: 25px;
-      text-align: center; /* Titre centré également */
+      text-align: center;
     }
 
-    /* Barre d'outils centrée */
     .toolbar {
       display: flex;
       gap: 12px;
       margin-bottom: 30px;
       flex-wrap: wrap;
-      justify-content: center; /* Centrage horizontal */
+      justify-content: center;
       align-items: center;
     }
 
-    input[type="text"] {
-      max-width: 300px;
-      flex-grow: 1;
-      min-width: 150px;
-    }
-
+    input[type="text"] { max-width: 300px; flex-grow: 1; min-width: 150px; }
     input[type="text"], select {
       background-color: #f5f5f7;
       border: 1px solid #d2d2d7;
@@ -54,17 +48,11 @@
       font-size: 14px;
       font-family: var(--apple-font);
       outline: none;
-      transition: all 0.2s;
-    }
-
-    input[type="text"]:focus, select:focus {
-      border-color: var(--accent);
-      background-color: #fff;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 16px;
     }
 
@@ -86,19 +74,43 @@
 
     .card-image {
       width: 100%;
-      height: 130px;
+      height: 120px;
       object-fit: cover;
-      border-bottom: 1px solid #f0f0f0;
       background-color: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
     }
 
     .card-content { padding: 12px; }
 
+    /* Alignement Picto + Titre + Badge */
     .card-header {
+      display: flex;
+      align-items: center; /* Centrage vertical du picto et du texte */
+      gap: 10px;
+      width: 100%;
+    }
+
+    .picto-box {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Si vous collez du SVG, on s'assure qu'il ne dépasse pas */
+    .picto-box svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .title-wrapper {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      flex-grow: 1;
+      min-width: 0; /* Important pour l'ellipsis */
     }
 
     .card-title {
@@ -119,15 +131,12 @@
       text-transform: uppercase;
       background-color: #f2f2f7;
       color: #636366;
-      white-space: nowrap;
+      margin-left: 8px;
       flex-shrink: 0;
     }
 
     @media (max-width: 600px) {
-      header h1 { font-size: 28px; }
       .toolbar { flex-direction: column; }
-      input[type="text"] { max-width: 100%; width: 100%; }
-      select { width: 100%; }
     }
   </style>
 </head>
@@ -138,7 +147,7 @@
   </header>
 
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="Rechercher titre ou type...">
+    <input type="text" id="searchInput" placeholder="Rechercher...">
     <select id="typeFilter">
       <option value="all">Tous les types</option>
     </select>
@@ -149,51 +158,27 @@
   <script>
     let allRecords = [];
 
-    // Gestion du titre dynamique via paramètre URL
     function updateTitleFromURL() {
       const params = new URLSearchParams(window.location.search);
       const customTitle = params.get('title');
-      if (customTitle) {
-        document.getElementById('pageTitle').textContent = customTitle;
-      }
-    }
-
-    async function setupTable() {
-      try {
-        const tables = await grist.docApi.listTables();
-        if (!tables.includes('Menus')) {
-          await grist.docApi.applyUserActions([
-            ['AddTable', 'Menus', [
-              {id: 'titre', type: 'Text'},
-              {id: 'type', type: 'Choice'},
-              {id: 'cover', type: 'Text'},
-              {id: 'lien', type: 'Text'}
-            ]]
-          ]);
-        }
-      } catch (e) { console.log("Setup skipped"); }
+      if (customTitle) document.getElementById('pageTitle').textContent = customTitle;
     }
 
     function getBadgeStyle(type) {
       if (!type) return '';
-      const colors = [
-        {bg: '#E3F2FD', text: '#1976D2'}, {bg: '#F3E5F5', text: '#7B1FA2'},
-        {bg: '#E8F5E9', text: '#388E3C'}, {bg: '#FFF3E0', text: '#F57C00'},
-        {bg: '#FFEBEE', text: '#D32F2F'}
-      ];
+      const colors = [{bg:'#E3F2FD',tx:'#1976D2'},{bg:'#F3E5F5',tx:'#7B1FA2'},{bg:'#E8F5E9',tx:'#388E3C'},{bg:'#FFF3E0',tx:'#F57C00'},{bg:'#FFEBEE',tx:'#D32F2F'}];
       let hash = 0;
       for (let i = 0; i < type.length; i++) hash = type.charCodeAt(i) + ((hash << 5) - hash);
       const index = Math.abs(hash) % colors.length;
-      return `background-color: ${colors[index].bg}; color: ${colors[index].text};`;
+      return `background-color: ${colors[index].bg}; color: ${colors[index].tx};`;
     }
 
     grist.ready({
       requiredAccess: 'full',
-      columns: ['titre', 'type', 'cover', 'lien']
+      columns: ['titre', 'type', 'cover', 'lien', 'picto']
     });
 
-    setupTable();
-    updateTitleFromURL(); // Appel au chargement
+    updateTitleFromURL();
 
     grist.onRecords(function(records) {
       allRecords = grist.mapColumnNames(records);
@@ -208,8 +193,7 @@
       select.innerHTML = '<option value="all">Tous les types</option>';
       types.sort().forEach(type => {
         const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type;
+        option.value = type; option.textContent = type;
         select.appendChild(option);
       });
       select.value = currentSelection;
@@ -222,10 +206,8 @@
       grid.innerHTML = '';
 
       const filtered = allRecords.filter(r => {
-        const matchesSearch = (r.titre || "").toLowerCase().includes(searchTerm) || 
-                             (r.type || "").toLowerCase().includes(searchTerm);
-        const matchesType = typeFilter === 'all' || r.type === typeFilter;
-        return matchesSearch && matchesType;
+        const matchesSearch = (r.titre || "").toLowerCase().includes(searchTerm) || (r.type || "").toLowerCase().includes(searchTerm);
+        return matchesSearch && (typeFilter === 'all' || r.type === typeFilter);
       });
 
       filtered.forEach(record => {
@@ -234,12 +216,19 @@
         card.href = record.lien || '#';
         card.target = "_blank";
         card.rel = "noopener noreferrer";
+
+        // Traitement du picto (Texte SVG ou Emoji)
+        const pictoContent = record.picto || '';
+
         card.innerHTML = `
-          <img class="card-image" src="${record.cover || 'https://via.placeholder.com/400x200?text=Image'}" alt="">
+          <img class="card-image" src="${record.cover || 'https://via.placeholder.com/400x150?text='}" alt="">
           <div class="card-content">
             <div class="card-header">
-              <p class="card-title" title="${record.titre}">${record.titre || 'Sans titre'}</p>
-              ${record.type ? `<span class="badge" style="${getBadgeStyle(record.type)}">${record.type}</span>` : ''}
+              ${pictoContent ? `<div class="picto-box">${pictoContent}</div>` : ''}
+              <div class="title-wrapper">
+                <p class="card-title" title="${record.titre}">${record.titre || 'Sans titre'}</p>
+                ${record.type ? `<span class="badge" style="${getBadgeStyle(record.type)}">${record.type}</span>` : ''}
+              </div>
             </div>
           </div>
         `;
