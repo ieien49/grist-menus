@@ -48,59 +48,61 @@
       font-size: 14px;
       font-family: var(--apple-font);
       outline: none;
+      transition: all 0.2s;
     }
 
-    /* Grille limitée à 5 colonnes maximum */
+    /* Grille 5 colonnes max */
     .grid {
       display: grid;
-      /* Modification ici : repeat(auto-fill...) limité par un max-width sur le conteneur ou via minmax */
-      grid-template-columns: repeat(auto-fill, minmax(calc(20% - 16px), 1fr));
-      gap: 16px;
-      max-width: 1400px; /* Empêche l'étalement excessif */
-      margin: 0 auto;    /* Centre la grille si l'écran est géant */
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
-    /* Ajustement pour forcer 5 colonnes max et gérer le responsive */
     @media (min-width: 1200px) {
-      .grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-
-    @media (max-width: 1199px) {
-      .grid {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      }
+      .grid { grid-template-columns: repeat(5, 1fr); }
     }
 
     .card {
       background: var(--card-bg);
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
       border: 1px solid #e5e5e7;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
       cursor: pointer;
       text-decoration: none;
       color: inherit;
-      height: 100%;
       display: flex;
       flex-direction: column;
     }
 
     .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+    }
+
+    /* Conteneur image avec effet de zoom au survol */
+    .card-image-container {
+      width: 100%;
+      height: 150px; /* Hauteur augmentée */
+      overflow: hidden;
+      border-bottom: 1px solid #f0f0f0;
     }
 
     .card-image {
       width: 100%;
-      height: 120px;
+      height: 100%;
       object-fit: cover;
+      transition: transform 0.5s ease;
       background-color: #fafafa;
-      border-bottom: 1px solid #f0f0f0;
     }
 
-    .card-content { padding: 12px; flex-grow: 1; }
+    .card:hover .card-image {
+      transform: scale(1.08);
+    }
+
+    .card-content { padding: 14px; flex-grow: 1; }
 
     .card-header {
       display: flex;
@@ -110,19 +112,16 @@
     }
 
     .picto-box {
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 20px; /* Taille pour les emojis */
+      font-size: 22px;
     }
 
-    .picto-box svg {
-      width: 100%;
-      height: 100%;
-    }
+    .picto-box svg { width: 100%; height: 100%; }
 
     .title-wrapper {
       display: flex;
@@ -133,7 +132,7 @@
     }
 
     .card-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       margin: 0;
       white-space: nowrap;
@@ -143,13 +142,11 @@
 
     .badge {
       display: inline-block;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 9px;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      background-color: #f2f2f7;
-      color: #636366;
       margin-left: 8px;
       flex-shrink: 0;
     }
@@ -157,6 +154,7 @@
     @media (max-width: 600px) {
       .toolbar { flex-direction: column; }
       header h1 { font-size: 28px; }
+      .card-image-container { height: 180px; } /* Plus haut sur mobile pour le confort */
     }
   </style>
 </head>
@@ -167,7 +165,7 @@
   </header>
 
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="Rechercher...">
+    <input type="text" id="searchInput" placeholder="Rechercher titre ou type...">
     <select id="typeFilter">
       <option value="all">Tous les types</option>
     </select>
@@ -240,7 +238,9 @@
         const pictoContent = record.picto || '';
 
         card.innerHTML = `
-          <img class="card-image" src="${record.cover || 'https://via.placeholder.com/400x150?text='}" alt="">
+          <div class="card-image-container">
+            <img class="card-image" src="${record.cover || 'https://via.placeholder.com/400x300?text='}" alt="">
+          </div>
           <div class="card-content">
             <div class="card-header">
               ${pictoContent ? `<div class="picto-box">${pictoContent}</div>` : ''}
