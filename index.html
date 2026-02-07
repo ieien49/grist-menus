@@ -39,7 +39,14 @@
       align-items: center;
     }
 
-    input[type="text"] { max-width: 300px; flex-grow: 1; min-width: 150px; }
+    /* Conteneur pour le champ de recherche avec croix */
+    .search-wrapper {
+      position: relative;
+      max-width: 300px;
+      flex-grow: 1;
+      min-width: 150px;
+    }
+
     input[type="text"], select {
       background-color: #f5f5f7;
       border: 1px solid #d2d2d7;
@@ -49,6 +56,77 @@
       font-family: var(--apple-font);
       outline: none;
       transition: all 0.2s;
+      box-sizing: border-box;
+    }
+
+    input[type="text"] {
+      width: 100%;
+    }
+
+    select {
+      min-width: 150px;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+      background-color: #ffffff;
+    }
+
+    /* Ajout de padding à droite pour la croix */
+    input[type="text"] {
+      padding-right: 35px;
+    }
+
+    /* Bouton de suppression (croix) */
+    .clear-search {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #86868b;
+      border: none;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      padding: 0;
+    }
+
+    .clear-search:hover {
+      background-color: #6e6e73;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .clear-search:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    /* Croix SVG */
+    .clear-search::before {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 2px;
+      background-color: white;
+      transform: rotate(45deg);
+    }
+
+    .clear-search::after {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 2px;
+      background-color: white;
+      transform: rotate(-45deg);
+    }
+
+    /* Afficher la croix uniquement quand il y a du texte */
+    .search-wrapper.has-text .clear-search {
+      display: flex;
     }
 
     /* Grille 5 colonnes max */
@@ -165,7 +243,10 @@
   </header>
 
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="Rechercher titre ou type...">
+    <div class="search-wrapper">
+      <input type="text" id="searchInput" placeholder="Rechercher titre ou type...">
+      <button class="clear-search" id="clearSearch" type="button" aria-label="Effacer la recherche"></button>
+    </div>
     <select id="typeFilter">
       <option value="all">Tous les types</option>
     </select>
@@ -255,8 +336,36 @@
       });
     }
 
+    // Gestion de l'affichage de la croix
+    const searchInput = document.getElementById('searchInput');
+    const searchWrapper = document.querySelector('.search-wrapper');
+    const clearButton = document.getElementById('clearSearch');
+
+    function updateClearButton() {
+      if (searchInput.value.length > 0) {
+        searchWrapper.classList.add('has-text');
+      } else {
+        searchWrapper.classList.remove('has-text');
+      }
+    }
+
+    // Fonction pour vider le champ de recherche
+    function clearSearch() {
+      searchInput.value = '';
+      updateClearButton();
+      searchInput.focus();
+      renderCards();
+    }
+
+    // Événements
+    searchInput.addEventListener('input', function() {
+      updateClearButton();
+      renderCards();
+    });
+
+    clearButton.addEventListener('click', clearSearch);
+
     document.getElementById('typeFilter').addEventListener('change', renderCards);
-    document.getElementById('searchInput').addEventListener('input', renderCards);
   </script>
 </body>
 </html>
